@@ -1,4 +1,4 @@
-// src/utils/dateUtils.ts
+﻿// src/utils/dateUtils.ts
 
 export const formatDate = (date: Date): string => {
     return date.toISOString().split('T')[0];

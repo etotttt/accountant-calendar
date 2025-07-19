@@ -1,4 +1,3 @@
-// app/(tabs)/_layout.tsx
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +13,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: 'Κΰλενδΰπό',
+                    title: 'ΠΠ°Π»ΠµΠ½Π΄Π°Ρ€Ρ',
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
                             name={focused ? 'calendar' : 'calendar-outline'}
@@ -27,7 +26,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="calculator"
                 options={{
-                    title: 'Πΰρχεςϋ',
+                    title: 'Π Π°ΡΡ‡Ρ‘Ρ‚Ρ‹',
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
                             name={focused ? 'calculator' : 'calculator-outline'}
@@ -40,7 +39,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="deadlines"
                 options={{
-                    title: 'Δεδλΰινϋ',
+                    title: 'Π”ΠµΠ΄Π»Π°ΠΉΠ½Ρ‹',
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons
                             name={focused ? 'alert-circle' : 'alert-circle-outline'}

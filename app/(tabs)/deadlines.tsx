@@ -4,8 +4,8 @@ import { View, Text, StyleSheet } from 'react-native';
 export default function DeadlinesScreen() {
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Налоговые дедлайны</Text>
-            <Text style={styles.subtitle}>Список важных дат</Text>
+            <Text style={styles.title}>РќР°Р»РѕРіРѕРІС‹Рµ РґРµРґР»Р°Р№РЅС‹</Text>
+            <Text style={styles.subtitle}>РЎРїРёСЃРѕРє РІР°Р¶РЅС‹С… РґР°С‚</Text>
         </View>
     );
 }

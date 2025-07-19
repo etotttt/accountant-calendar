@@ -1,4 +1,4 @@
-// src/types/index.ts
+﻿// src/types/index.ts
 
 export interface HolidayData {
     [date: string]: string;

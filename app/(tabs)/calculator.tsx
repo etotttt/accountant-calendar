@@ -3,8 +3,8 @@ import { View, Text, StyleSheet } from 'react-native';
 export default function CalculatorScreen() {
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Калькулятор зарплаты</Text>
-            <Text style={styles.subtitle}>Скоро здесь появится калькулятор</Text>
+            <Text style={styles.title}>РљР°Р»СЊРєСѓР»СЏС‚РѕСЂ Р·Р°СЂРїР»Р°С‚С‹</Text>
+            <Text style={styles.subtitle}>РЎРєРѕСЂРѕ Р·РґРµСЃСЊ РїРѕСЏРІРёС‚СЃСЏ РєР°Р»СЊРєСѓР»СЏС‚РѕСЂ</Text>
         </View>
     );
 }

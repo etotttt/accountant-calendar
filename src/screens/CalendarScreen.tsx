@@ -10,19 +10,19 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-// Импорт компонентов
+// РРјРїРѕСЂС‚ РєРѕРјРїРѕРЅРµРЅС‚РѕРІ
 import YearView from '../components/Calendar/YearView';
 import MonthView from '../components/Calendar/MonthView';
 import DateDetailsModal from '../components/Modals/DateDetailsModal';
 import WorkdayCalculatorModal from '../components/Modals/WorkdayCalculatorModal';
 
-// Импорт хуков и утилит
+// РРјРїРѕСЂС‚ С…СѓРєРѕРІ Рё СѓС‚РёР»РёС‚
 import { useTasks } from '../hooks/useTasks';
 import { useCalendarData } from '../hooks/useCalendarData';
 import { formatDate } from '../utils/dateUtils';
 import { taxDeadlines } from '../constants/calendarData';
 
-// Типы
+// РўРёРїС‹
 import { ViewType, YearStats } from '../types';
 
 export default function CalendarScreen() {
@@ -79,7 +79,7 @@ export default function CalendarScreen() {
             <View style={styles.header}>
                 <View style={styles.titleRow}>
                     <Ionicons name="calendar" size={32} color="#3b82f6" />
-                    <Text style={styles.title}>Производственный календарь</Text>
+                    <Text style={styles.title}>РџСЂРѕРёР·РІРѕРґСЃС‚РІРµРЅРЅС‹Р№ РєР°Р»РµРЅРґР°СЂСЊ</Text>
                 </View>
 
                 <View style={styles.navigation}>
@@ -110,7 +110,7 @@ export default function CalendarScreen() {
                         onPress={() => setView('month')}
                     >
                         <Text style={[styles.viewButtonText, view === 'month' && styles.viewButtonTextActive]}>
-                            Месяц
+                            РњРµСЃСЏС†
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -118,7 +118,7 @@ export default function CalendarScreen() {
                         onPress={() => setView('year')}
                     >
                         <Text style={[styles.viewButtonText, view === 'year' && styles.viewButtonTextActive]}>
-                            Год
+                            Р“РѕРґ
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -127,7 +127,7 @@ export default function CalendarScreen() {
             {!isDataAvailable && (
                 <View style={styles.warning}>
                     <Text style={styles.warningText}>
-                        Данные для {currentDate.getFullYear()} года отсутствуют
+                        Р”Р°РЅРЅС‹Рµ РґР»СЏ {currentDate.getFullYear()} РіРѕРґР° РѕС‚СЃСѓС‚СЃС‚РІСѓСЋС‚
                     </Text>
                 </View>
             )}
@@ -155,19 +155,19 @@ export default function CalendarScreen() {
                 )}
 
                 <View style={styles.statsCard}>
-                    <Text style={styles.statsTitle}>Статистика {currentDate.getFullYear()} года</Text>
+                    <Text style={styles.statsTitle}>РЎС‚Р°С‚РёСЃС‚РёРєР° {currentDate.getFullYear()} РіРѕРґР°</Text>
                     <View style={styles.statsRow}>
                         <View style={styles.statItem}>
                             <Text style={styles.statValue}>{yearStats.total.calendar}</Text>
-                            <Text style={styles.statLabel}>Всего дней</Text>
+                            <Text style={styles.statLabel}>Р’СЃРµРіРѕ РґРЅРµР№</Text>
                         </View>
                         <View style={styles.statItem}>
                             <Text style={styles.statValue}>{yearStats.total.work}</Text>
-                            <Text style={styles.statLabel}>Рабочих</Text>
+                            <Text style={styles.statLabel}>Р Р°Р±РѕС‡РёС…</Text>
                         </View>
                         <View style={styles.statItem}>
                             <Text style={styles.statValue}>{yearStats.total.holiday}</Text>
-                            <Text style={styles.statLabel}>Выходных</Text>
+                            <Text style={styles.statLabel}>Р’С‹С…РѕРґРЅС‹С…</Text>
                         </View>
                     </View>
                 </View>
