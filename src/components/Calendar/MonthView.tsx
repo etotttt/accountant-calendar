@@ -61,14 +61,27 @@ const MonthView: React.FC<MonthViewProps> = ({
 
   const isInVacationRange = (date: Date): boolean => {
     if (!vacationStart || !vacationEnd || calculatorMode !== 'vacation') return false;
-    return date >= vacationStart && date <= vacationEnd;
+    return date > vacationStart && date < vacationEnd;
   };
 
-  const isVacationBoundary = (date: Date): 'start' | 'end' | null => {
-    if (!vacationStart || !vacationEnd || calculatorMode !== 'vacation') return null;
+  const getDateStatus = (date: Date): 'start' | 'end' | 'range' | 'single' | null => {
+    if (calculatorMode !== 'vacation' || !vacationStart) return null;
+    
     const dateStr = formatDate(date);
-    if (dateStr === formatDate(vacationStart)) return 'start';
-    if (dateStr === formatDate(vacationEnd)) return 'end';
+    const startStr = formatDate(vacationStart);
+    
+    if (!vacationEnd) {
+      // Только начало выбрано
+      return dateStr === startStr ? 'single' : null;
+    }
+    
+    const endStr = formatDate(vacationEnd);
+    
+    if (dateStr === startStr && dateStr === endStr) return 'single';
+    if (dateStr === startStr) return 'start';
+    if (dateStr === endStr) return 'end';
+    if (isInVacationRange(date)) return 'range';
+    
     return null;
   };
 
@@ -89,8 +102,7 @@ const MonthView: React.FC<MonthViewProps> = ({
           const dayTasks = tasks.filter(t => t.date === dateStr);
           const dayDeadline = taxDeadlines[dateStr];
           const isSelected = selectedDate && formatDate(selectedDate) === dateStr;
-          const inVacation = isInVacationRange(date);
-          const vacationBoundary = isVacationBoundary(date);
+          const dateStatus = getDateStatus(date);
 
           return (
             <TouchableOpacity
@@ -100,10 +112,11 @@ const MonthView: React.FC<MonthViewProps> = ({
                 !isCurrentMonth && styles.dayFullOtherMonth,
                 (isHol || isWknd) && isCurrentMonth && styles.dayFullHoliday,
                 isShort && isCurrentMonth && styles.dayFullShort,
-                isSelected && styles.dayFullSelected,
-                inVacation && styles.dayInVacation,
-                vacationBoundary === 'start' && styles.vacationStart,
-                vacationBoundary === 'end' && styles.vacationEnd,
+                isSelected && calculatorMode !== 'vacation' && styles.dayFullSelected,
+                dateStatus === 'single' && styles.vacationSingle,
+                dateStatus === 'start' && styles.vacationStart,
+                dateStatus === 'end' && styles.vacationEnd,
+                dateStatus === 'range' && styles.vacationRange,
               ]}
               onPress={() => onDateClick(date)}
             >
@@ -111,7 +124,7 @@ const MonthView: React.FC<MonthViewProps> = ({
                 styles.dayFullNumber,
                 !isCurrentMonth && styles.dayFullNumberOther,
                 (isHol || isWknd) && isCurrentMonth && styles.dayFullNumberHoliday,
-                inVacation && styles.dayFullNumberVacation,
+                dateStatus && styles.dayFullNumberVacation,
               ]}>
                 {date.getDate()}
               </Text>
@@ -144,17 +157,23 @@ const MonthView: React.FC<MonthViewProps> = ({
       {calculatorMode === 'vacation' && (
         <View style={styles.vacationLegend}>
           <View style={styles.legendItem}>
-            <View style={[styles.legendColor, styles.vacationStartColor]} />
-            <Text style={styles.legendText}>Начало отпуска</Text>
+            <View style={[styles.legendColor, styles.legendStartColor]} />
+            <Text style={styles.legendText}>
+              {!vacationEnd ? 'Выбранная дата' : 'Начало отпуска'}
+            </Text>
           </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, styles.vacationColor]} />
-            <Text style={styles.legendText}>Период отпуска</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, styles.vacationEndColor]} />
-            <Text style={styles.legendText}>Конец отпуска</Text>
-          </View>
+          {vacationEnd && (
+            <>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendColor, styles.legendRangeColor]} />
+                <Text style={styles.legendText}>Период отпуска</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendColor, styles.legendEndColor]} />
+                <Text style={styles.legendText}>Конец отпуска</Text>
+              </View>
+            </>
+          )}
         </View>
       )}
     </View>
@@ -212,18 +231,27 @@ const styles = StyleSheet.create({
     borderColor: '#3b82f6',
     borderWidth: 2
   },
-  dayInVacation: {
-    backgroundColor: '#d1fae5'
+  vacationSingle: {
+    backgroundColor: '#6366f1',
+    borderColor: '#6366f1',
+    borderWidth: 2
   },
   vacationStart: {
-    backgroundColor: '#34d399',
+    backgroundColor: '#6366f1',
     borderTopLeftRadius: 8,
-    borderBottomLeftRadius: 8
+    borderBottomLeftRadius: 8,
+    borderColor: '#6366f1',
+    borderWidth: 2
   },
   vacationEnd: {
-    backgroundColor: '#34d399',
+    backgroundColor: '#6366f1',
     borderTopRightRadius: 8,
-    borderBottomRightRadius: 8
+    borderBottomRightRadius: 8,
+    borderColor: '#6366f1',
+    borderWidth: 2
+  },
+  vacationRange: {
+    backgroundColor: '#e0e7ff'
   },
   dayFullNumber: {
     fontSize: 14,
@@ -238,7 +266,7 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   dayFullNumberVacation: {
-    color: '#065f46',
+    color: 'white',
     fontWeight: '600'
   },
   dayContent: {
@@ -285,7 +313,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 16,
-    gap: 16
+    gap: 16,
+    flexWrap: 'wrap'
   },
   legendItem: {
     flexDirection: 'row',
@@ -297,14 +326,14 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 4
   },
-  vacationStartColor: {
-    backgroundColor: '#34d399'
+  legendStartColor: {
+    backgroundColor: '#6366f1'
   },
-  vacationColor: {
-    backgroundColor: '#d1fae5'
+  legendRangeColor: {
+    backgroundColor: '#e0e7ff'
   },
-  vacationEndColor: {
-    backgroundColor: '#34d399'
+  legendEndColor: {
+    backgroundColor: '#6366f1'
   },
   legendText: {
     fontSize: 12,

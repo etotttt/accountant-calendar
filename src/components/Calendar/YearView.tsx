@@ -1,5 +1,5 @@
 // src/components/Calendar/YearView.tsx
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { HolidayData, ShortDayData, Task, TaxDeadlines } from '../../types';
 import { formatDate, getDaysInMonth, getFirstDayOfWeek, getMonthName, isWeekend } from '../../utils/dateUtils';
@@ -25,7 +25,8 @@ interface MonthMiniCardProps {
   onDateClick: (date: Date) => void;
 }
 
-const MonthMiniCard: React.FC<MonthMiniCardProps> = ({ 
+// Мемоизируем компонент месяца для предотвращения лишних рендеров
+const MonthMiniCard: React.FC<MonthMiniCardProps> = memo(({ 
   month, 
   year, 
   holidays, 
@@ -34,30 +35,55 @@ const MonthMiniCard: React.FC<MonthMiniCardProps> = ({
   taxDeadlines, 
   onDateClick 
 }) => {
-  const monthName = getMonthName(new Date(year, month));
-  const daysInMonth = getDaysInMonth(year, month);
-  const startingDay = getFirstDayOfWeek(year, month);
+  // Кешируем вычисления для месяца
+  const monthData = useMemo(() => {
+    const monthName = getMonthName(new Date(year, month));
+    const daysInMonth = getDaysInMonth(year, month);
+    const startingDay = getFirstDayOfWeek(year, month);
+    const days = Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1));
+    
+    return { monthName, startingDay, days };
+  }, [month, year]);
 
-  const days = Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1));
+  // Кешируем задачи и дедлайны для этого месяца
+  const monthTasks = useMemo(() => {
+    const startStr = formatDate(new Date(year, month, 1));
+    const endStr = formatDate(new Date(year, month + 1, 0));
+    
+    return tasks.filter(task => task.date >= startStr && task.date <= endStr);
+  }, [tasks, month, year]);
+
+  const monthDeadlines = useMemo(() => {
+    const result: { [key: string]: boolean } = {};
+    Object.keys(taxDeadlines).forEach(date => {
+      if (date.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`)) {
+        result[date] = true;
+      }
+    });
+    return result;
+  }, [taxDeadlines, month, year]);
 
   return (
     <View style={styles.monthMiniCard}>
-      <Text style={styles.monthMiniTitle}>{monthName}</Text>
+      <Text style={styles.monthMiniTitle}>{monthData.monthName}</Text>
       <View style={styles.weekDaysRow}>
-        {['П', 'В', 'С', 'Ч', 'П', 'С', 'В'].map((d, i) => (
+        {weekDays.map((d, i) => (
           <Text key={i} style={styles.weekDayMini}>{d}</Text>
         ))}
       </View>
       <View style={styles.daysGrid}>
-        {Array.from({ length: startingDay }).map((_, i) => (
+        {/* Пустые клетки для выравнивания */}
+        {Array.from({ length: monthData.startingDay }).map((_, i) => (
           <View key={`empty-${i}`} style={styles.dayMini} />
         ))}
-        {days.map(date => {
+        
+        {/* Дни месяца */}
+        {monthData.days.map(date => {
           const dateStr = formatDate(date);
           const isHol = holidays[dateStr];
           const isWknd = isWeekend(date);
-          const hasTask = tasks.some(t => t.date === dateStr);
-          const hasDeadline = taxDeadlines[dateStr];
+          const hasTask = monthTasks.some(t => t.date === dateStr);
+          const hasDeadline = monthDeadlines[dateStr];
 
           return (
             <TouchableOpacity
@@ -68,6 +94,7 @@ const MonthMiniCard: React.FC<MonthMiniCardProps> = ({
                 shortDays[dateStr] && styles.dayMiniShort,
               ]}
               onPress={() => onDateClick(date)}
+              activeOpacity={0.7}
             >
               <Text style={[
                 styles.dayMiniText,
@@ -87,7 +114,21 @@ const MonthMiniCard: React.FC<MonthMiniCardProps> = ({
       </View>
     </View>
   );
-};
+}, (prevProps, nextProps) => {
+  // Кастомная функция сравнения для оптимизации
+  return (
+    prevProps.month === nextProps.month &&
+    prevProps.year === nextProps.year &&
+    prevProps.holidays === nextProps.holidays &&
+    prevProps.shortDays === nextProps.shortDays &&
+    prevProps.tasks === nextProps.tasks &&
+    prevProps.taxDeadlines === nextProps.taxDeadlines
+  );
+});
+
+// Константы вынесены из компонента
+const weekDays = ['П', 'В', 'С', 'Ч', 'П', 'С', 'В'];
+const months = Array.from({ length: 12 }, (_, i) => i);
 
 const YearView: React.FC<YearViewProps> = ({ 
   year, 
@@ -97,13 +138,11 @@ const YearView: React.FC<YearViewProps> = ({
   taxDeadlines, 
   onDateClick 
 }) => {
-  const months = Array.from({ length: 12 }, (_, i) => i);
-
   return (
     <View style={styles.yearGrid}>
       {months.map(month => (
         <MonthMiniCard
-          key={month}
+          key={`${year}-${month}`}
           month={month}
           year={year}
           holidays={holidays}
@@ -199,4 +238,7 @@ const styles = StyleSheet.create({
   }
 });
 
-export default YearView;
+// Добавляем displayName для отладки
+MonthMiniCard.displayName = 'MonthMiniCard';
+
+export default memo(YearView);
