@@ -1,12 +1,12 @@
 // src/components/FABMenu.tsx
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
-    Animated,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 interface FABMenuProps {
@@ -15,87 +15,63 @@ interface FABMenuProps {
   isVisible: boolean;
 }
 
-const FABMenu: React.FC<FABMenuProps> = ({ 
-  onVacationPress, 
+const FABMenu: React.FC<FABMenuProps> = ({
+  onVacationPress,
   onCalculatorPress,
-  isVisible 
+  isVisible
 }) => {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = React.useState(false);
   const animation = useRef(new Animated.Value(0)).current;
+  const buttonScale = useRef(new Animated.Value(0)).current;
 
-  // Сброс анимации при скрытии меню
+  // Сброс состояния при скрытии компонента
   useEffect(() => {
-    if (!isVisible && expanded) {
+    if (!isVisible) {
+      // Сбрасываем состояние и анимации
       setExpanded(false);
-      Animated.timing(animation, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true
-      }).start();
+      animation.setValue(0);
+      buttonScale.setValue(0);
     }
-  }, [isVisible]);
+  }, [isVisible, animation, buttonScale]);
+
+  // Анимация появления/скрытия кнопок
+  useEffect(() => {
+    Animated.timing(buttonScale, {
+      toValue: expanded ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true
+    }).start();
+  }, [expanded, buttonScale]);
 
   const toggleMenu = () => {
     const toValue = expanded ? 0 : 1;
-    
     Animated.spring(animation, {
       toValue,
       friction: 5,
       tension: 40,
       useNativeDriver: true
     }).start();
-    
     setExpanded(!expanded);
   };
 
-  const handleVacationPress = () => {
-    // Сначала закрываем меню
-    Animated.timing(animation, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true
-    }).start(() => {
-      setExpanded(false);
-      onVacationPress();
-    });
-  };
-
-  const handleCalculatorPress = () => {
-    // Сначала закрываем меню
-    Animated.timing(animation, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true
-    }).start(() => {
-      setExpanded(false);
-      onCalculatorPress();
-    });
-  };
-
-  const vacationButtonStyle = {
-    transform: [
-      { scale: animation },
-      {
-        translateY: animation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -70]
-        })
-      }
-    ],
-    opacity: animation
-  };
-
-  const calculatorButtonStyle = {
-    transform: [
-      { scale: animation },
-      {
-        translateY: animation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -140]
-        })
-      }
-    ],
-    opacity: animation
+  const handleButtonPress = (action: () => void) => {
+    // Сначала выполняем действие
+    action();
+    
+    // Затем закрываем меню
+    setExpanded(false);
+    Animated.parallel([
+      Animated.timing(animation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true
+      }),
+      Animated.timing(buttonScale, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true
+      })
+    ]).start();
   };
 
   const rotation = {
@@ -111,63 +87,82 @@ const FABMenu: React.FC<FABMenuProps> = ({
 
   if (!isVisible) return null;
 
+  const buttons = [
+    { 
+      icon: 'calculator', 
+      action: onCalculatorPress, 
+      offset: 140, 
+      label: 'Калькулятор дней', 
+      color: styles.fabSecondary 
+    },
+    { 
+      icon: 'cash-outline', 
+      action: onVacationPress, 
+      offset: 70, 
+      label: 'Расчет отпускных', 
+      color: styles.fabVacation 
+    }
+  ];
+
   return (
     <View style={styles.container} pointerEvents="box-none">
-      {/* Фон при раскрытом меню */}
       {expanded && (
         <TouchableOpacity 
           style={styles.backdrop} 
-          activeOpacity={1}
-          onPress={toggleMenu}
+          activeOpacity={1} 
+          onPress={toggleMenu} 
         />
       )}
-      
-      {/* Кнопка калькулятора */}
-      <Animated.View 
-        style={[styles.button, calculatorButtonStyle]}
-        pointerEvents={expanded ? 'auto' : 'none'}
-      >
-        <View style={styles.buttonContent}>
-          {expanded && (
-            <View style={styles.label}>
-              <Text style={styles.labelText}>Калькулятор дней</Text>
-            </View>
-          )}
-          <TouchableOpacity
-            style={[styles.fab, styles.fabSecondary]}
-            onPress={handleCalculatorPress}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="calculator" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
 
-      {/* Кнопка отпускных */}
-      <Animated.View 
-        style={[styles.button, vacationButtonStyle]}
-        pointerEvents={expanded ? 'auto' : 'none'}
-      >
-        <View style={styles.buttonContent}>
+      {/* Кнопки - рендерим всегда, но управляем видимостью через opacity и scale */}
+      {buttons.map((item) => (
+        <Animated.View
+          key={item.icon}
+          style={[
+            styles.button,
+            {
+              transform: [
+                { 
+                  scale: buttonScale 
+                },
+                { 
+                  translateY: buttonScale.interpolate({ 
+                    inputRange: [0, 1], 
+                    outputRange: [0, -item.offset] 
+                  }) 
+                }
+              ],
+              opacity: buttonScale
+            }
+          ]}
+        >
           {expanded && (
-            <View style={styles.label}>
-              <Text style={styles.labelText}>Расчет отпускных</Text>
-            </View>
+            <Animated.View 
+              style={[
+                styles.label,
+                { opacity: buttonScale }
+              ]}
+            >
+              <Text style={styles.labelText}>{item.label}</Text>
+            </Animated.View>
           )}
           <TouchableOpacity
-            style={[styles.fab, styles.fabVacation]}
-            onPress={handleVacationPress}
+            style={[styles.fab, item.color]}
+            onPress={() => expanded ? handleButtonPress(item.action) : null}
+            disabled={!expanded}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             activeOpacity={0.8}
           >
-            <Ionicons name="cash-outline" size={24} color="white" />
+            <Ionicons name={item.icon as any} size={24} color="white" />
           </TouchableOpacity>
-        </View>
-      </Animated.View>
+        </Animated.View>
+      ))}
 
       {/* Главная кнопка */}
-      <TouchableOpacity
-        style={[styles.fab, styles.fabMain]}
+      <TouchableOpacity 
+        style={[styles.fab, styles.fabMain]} 
         onPress={toggleMenu}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         activeOpacity={0.8}
       >
         <Animated.View style={rotation}>
@@ -183,7 +178,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     right: 16,
-    alignItems: 'flex-end'
+    zIndex: 999
   },
   backdrop: {
     position: 'absolute',
@@ -195,11 +190,9 @@ const styles = StyleSheet.create({
   },
   button: {
     position: 'absolute',
-    right: 0
-  },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center'
+    right: 0,
+    bottom: 0,
+    alignItems: 'flex-end'
   },
   fab: {
     width: 56,
@@ -213,15 +206,9 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 8
   },
-  fabMain: {
-    backgroundColor: '#6366f1'
-  },
-  fabVacation: {
-    backgroundColor: '#10b981'
-  },
-  fabSecondary: {
-    backgroundColor: '#3b82f6'
-  },
+  fabMain: { backgroundColor: '#6366f1' },
+  fabVacation: { backgroundColor: '#10b981' },
+  fabSecondary: { backgroundColor: '#3b82f6' },
   label: {
     position: 'absolute',
     right: 70,

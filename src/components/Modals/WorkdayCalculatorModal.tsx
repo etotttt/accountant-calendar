@@ -4,12 +4,11 @@ import React, { useState } from 'react';
 import {
   Alert,
   Modal,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 interface Props {
@@ -115,9 +114,9 @@ const styles = StyleSheet.create({
   },
   calculatorModal: {
     backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    borderRadius: 20,
+    width: '90%',
+    maxWidth: 400,
   },
   modalHeader: {
     flexDirection: 'row',

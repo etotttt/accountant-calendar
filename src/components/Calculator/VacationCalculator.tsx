@@ -2,14 +2,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-    Keyboard,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Keyboard,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { HolidayData } from '../../types';
 import { calculateVacationDays } from '../../utils/vacationCalculator';
 
@@ -18,17 +20,21 @@ interface VacationCalculatorProps {
   vacationEnd: Date | null;
   holidays: HolidayData;
   onReset: () => void;
+  onDateChange?: (start: Date | null, end: Date | null) => void;
 }
 
 const VacationCalculator: React.FC<VacationCalculatorProps> = ({
   vacationStart,
   vacationEnd,
   holidays,
-  onReset
+  onReset,
+  onDateChange
 }) => {
   const [salary, setSalary] = useState('');
   const [result, setResult] = useState<any>(null);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -83,6 +89,26 @@ const VacationCalculator: React.FC<VacationCalculatorProps> = ({
     }
   };
 
+  const handleStartDateConfirm = (date: Date) => {
+    if (vacationEnd && date > vacationEnd) {
+      Alert.alert('Ошибка', 'Дата начала не может быть позже даты окончания');
+      setShowStartPicker(false);
+      return;
+    }
+    onDateChange?.(date, vacationEnd);
+    setShowStartPicker(false);
+  };
+
+  const handleEndDateConfirm = (date: Date) => {
+    if (vacationStart && date < vacationStart) {
+      Alert.alert('Ошибка', 'Дата окончания не может быть раньше даты начала');
+      setShowEndPicker(false);
+      return;
+    }
+    onDateChange?.(vacationStart, date);
+    setShowEndPicker(false);
+  };
+
   return (
     <ScrollView 
       style={styles.container}
@@ -91,21 +117,31 @@ const VacationCalculator: React.FC<VacationCalculatorProps> = ({
     >
       <View style={styles.card}>
         <View style={styles.header}>
-          <Text style={styles.title}>Расчет отпускных</Text>
+          <View style={styles.titleRow}>
+            <Ionicons name="cash-outline" size={24} color="#10b981" />
+            <Text style={styles.title}>Расчет отпускных</Text>
+          </View>
           <TouchableOpacity onPress={onReset} style={styles.resetButton}>
             <Ionicons name="refresh" size={20} color="#6b7280" />
           </TouchableOpacity>
         </View>
 
         <Text style={styles.hint}>
-          Выберите даты отпуска на календаре
+          Выберите даты отпуска или нажмите на календарь
         </Text>
 
         {/* Даты отпуска */}
         <View style={styles.datesContainer}>
-          <View style={styles.dateBlock}>
+          <TouchableOpacity 
+            style={styles.dateBlock}
+            onPress={() => setShowStartPicker(true)}
+            activeOpacity={0.7}
+          >
             <Text style={styles.dateLabel}>Начало отпуска</Text>
-            <View style={styles.dateValue}>
+            <View style={[
+              styles.dateValue,
+              vacationStart && styles.dateValueSelected
+            ]}>
               <Ionicons 
                 name="calendar-outline" 
                 size={16} 
@@ -120,15 +156,22 @@ const VacationCalculator: React.FC<VacationCalculatorProps> = ({
                   : 'Выберите дату'}
               </Text>
             </View>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.dateSeparator}>
             <Ionicons name="arrow-forward" size={20} color="#9ca3af" />
           </View>
 
-          <View style={styles.dateBlock}>
+          <TouchableOpacity 
+            style={styles.dateBlock}
+            onPress={() => setShowEndPicker(true)}
+            activeOpacity={0.7}
+          >
             <Text style={styles.dateLabel}>Конец отпуска</Text>
-            <View style={styles.dateValue}>
+            <View style={[
+              styles.dateValue,
+              vacationEnd && styles.dateValueSelected
+            ]}>
               <Ionicons 
                 name="calendar-outline" 
                 size={16} 
@@ -143,7 +186,7 @@ const VacationCalculator: React.FC<VacationCalculatorProps> = ({
                   : 'Выберите дату'}
               </Text>
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Ввод зарплаты */}
@@ -207,6 +250,33 @@ const VacationCalculator: React.FC<VacationCalculatorProps> = ({
           </View>
         )}
       </View>
+
+      {/* Date Picker Modals */}
+      <DateTimePickerModal
+        isVisible={showStartPicker}
+        mode="date"
+        onConfirm={handleStartDateConfirm}
+        onCancel={() => setShowStartPicker(false)}
+        date={vacationStart || new Date()}
+        minimumDate={new Date()}
+        locale="ru_RU"
+        cancelTextIOS="Отмена"
+        confirmTextIOS="Выбрать"
+        headerTextIOS="Выберите дату начала отпуска"
+      />
+
+      <DateTimePickerModal
+        isVisible={showEndPicker}
+        mode="date"
+        onConfirm={handleEndDateConfirm}
+        onCancel={() => setShowEndPicker(false)}
+        date={vacationEnd || vacationStart || new Date()}
+        minimumDate={vacationStart || new Date()}
+        locale="ru_RU"
+        cancelTextIOS="Отмена"
+        confirmTextIOS="Выбрать"
+        headerTextIOS="Выберите дату окончания отпуска"
+      />
     </ScrollView>
   );
 };
@@ -220,16 +290,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
   },
   title: {
     fontSize: 20,
@@ -267,7 +342,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#f3f4f6',
     padding: 12,
     borderRadius: 8,
-    gap: 8
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'transparent'
+  },
+  dateValueSelected: {
+    backgroundColor: '#f0fdf4',
+    borderColor: '#10b981'
   },
   dateText: {
     fontSize: 14,

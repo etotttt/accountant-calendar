@@ -124,7 +124,7 @@ const MonthView: React.FC<MonthViewProps> = ({
                 styles.dayFullNumber,
                 !isCurrentMonth && styles.dayFullNumberOther,
                 (isHol || isWknd) && isCurrentMonth && styles.dayFullNumberHoliday,
-                dateStatus && styles.dayFullNumberVacation,
+                (dateStatus === 'start' || dateStatus === 'end' || dateStatus === 'single') && styles.dayFullNumberVacation,
               ]}>
                 {date.getDate()}
               </Text>
@@ -232,26 +232,26 @@ const styles = StyleSheet.create({
     borderWidth: 2
   },
   vacationSingle: {
-    backgroundColor: '#6366f1',
-    borderColor: '#6366f1',
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
     borderWidth: 2
   },
   vacationStart: {
-    backgroundColor: '#6366f1',
+    backgroundColor: '#10b981',
     borderTopLeftRadius: 8,
     borderBottomLeftRadius: 8,
-    borderColor: '#6366f1',
+    borderColor: '#10b981',
     borderWidth: 2
   },
   vacationEnd: {
-    backgroundColor: '#6366f1',
+    backgroundColor: '#10b981',
     borderTopRightRadius: 8,
     borderBottomRightRadius: 8,
-    borderColor: '#6366f1',
+    borderColor: '#10b981',
     borderWidth: 2
   },
   vacationRange: {
-    backgroundColor: '#e0e7ff'
+    backgroundColor: '#d1fae5'
   },
   dayFullNumber: {
     fontSize: 14,
@@ -327,13 +327,13 @@ const styles = StyleSheet.create({
     borderRadius: 4
   },
   legendStartColor: {
-    backgroundColor: '#6366f1'
+    backgroundColor: '#10b981'
   },
   legendRangeColor: {
-    backgroundColor: '#e0e7ff'
+    backgroundColor: '#d1fae5'
   },
   legendEndColor: {
-    backgroundColor: '#6366f1'
+    backgroundColor: '#10b981'
   },
   legendText: {
     fontSize: 12,

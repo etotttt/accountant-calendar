@@ -25,6 +25,48 @@ interface MonthMiniCardProps {
   onDateClick: (date: Date) => void;
 }
 
+// Оптимизированный компонент дня
+const DayCell = memo(({ 
+  date, 
+  isHol, 
+  isWknd, 
+  isShort, 
+  hasTask, 
+  hasDeadline, 
+  onPress 
+}: {
+  date: Date;
+  isHol: boolean;
+  isWknd: boolean;
+  isShort: boolean;
+  hasTask: boolean;
+  hasDeadline: boolean;
+  onPress: () => void;
+}) => (
+  <TouchableOpacity
+    style={[
+      styles.dayMini,
+      (isHol || isWknd) && styles.dayMiniHoliday,
+      isShort && styles.dayMiniShort,
+    ]}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <Text style={[
+      styles.dayMiniText,
+      (isHol || isWknd) && styles.dayMiniTextHoliday
+    ]}>
+      {date.getDate()}
+    </Text>
+    {(hasTask || hasDeadline) && (
+      <View style={styles.dayIndicators}>
+        {hasTask && <View style={styles.taskDot} />}
+        {hasDeadline && <View style={styles.deadlineDot} />}
+      </View>
+    )}
+  </TouchableOpacity>
+));
+
 // Мемоизируем компонент месяца для предотвращения лишних рендеров
 const MonthMiniCard: React.FC<MonthMiniCardProps> = memo(({ 
   month, 
@@ -46,22 +88,21 @@ const MonthMiniCard: React.FC<MonthMiniCardProps> = memo(({
   }, [month, year]);
 
   // Кешируем задачи и дедлайны для этого месяца
-  const monthTasks = useMemo(() => {
+  const { monthTasks, monthDeadlines } = useMemo(() => {
     const startStr = formatDate(new Date(year, month, 1));
     const endStr = formatDate(new Date(year, month + 1, 0));
     
-    return tasks.filter(task => task.date >= startStr && task.date <= endStr);
-  }, [tasks, month, year]);
-
-  const monthDeadlines = useMemo(() => {
-    const result: { [key: string]: boolean } = {};
+    const filteredTasks = tasks.filter(task => task.date >= startStr && task.date <= endStr);
+    
+    const deadlines: { [key: string]: boolean } = {};
     Object.keys(taxDeadlines).forEach(date => {
       if (date.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`)) {
-        result[date] = true;
+        deadlines[date] = true;
       }
     });
-    return result;
-  }, [taxDeadlines, month, year]);
+    
+    return { monthTasks: filteredTasks, monthDeadlines: deadlines };
+  }, [tasks, taxDeadlines, month, year]);
 
   return (
     <View style={styles.monthMiniCard}>
@@ -86,29 +127,16 @@ const MonthMiniCard: React.FC<MonthMiniCardProps> = memo(({
           const hasDeadline = monthDeadlines[dateStr];
 
           return (
-            <TouchableOpacity
+            <DayCell
               key={dateStr}
-              style={[
-                styles.dayMini,
-                (isHol || isWknd) && styles.dayMiniHoliday,
-                shortDays[dateStr] && styles.dayMiniShort,
-              ]}
+              date={date}
+              isHol={!!isHol}
+              isWknd={isWknd}
+              isShort={!!shortDays[dateStr]}
+              hasTask={hasTask}
+              hasDeadline={!!hasDeadline}
               onPress={() => onDateClick(date)}
-              activeOpacity={0.7}
-            >
-              <Text style={[
-                styles.dayMiniText,
-                (isHol || isWknd) && styles.dayMiniTextHoliday
-              ]}>
-                {date.getDate()}
-              </Text>
-              {(hasTask || hasDeadline) && (
-                <View style={styles.dayIndicators}>
-                  {hasTask && <View style={styles.taskDot} />}
-                  {hasDeadline && <View style={styles.deadlineDot} />}
-                </View>
-              )}
-            </TouchableOpacity>
+            />
           );
         })}
       </View>
@@ -165,31 +193,33 @@ const styles = StyleSheet.create({
   monthMiniCard: {
     width: (screenWidth - 40) / 2 - 5,
     backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3
   },
   monthMiniTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 10,
     textAlign: 'center',
-    textTransform: 'capitalize'
+    textTransform: 'capitalize',
+    color: '#1f2937'
   },
   weekDaysRow: {
     flexDirection: 'row',
-    marginBottom: 4
+    marginBottom: 6
   },
   weekDayMini: {
     flex: 1,
     textAlign: 'center',
     fontSize: 10,
-    color: '#6b7280'
+    color: '#6b7280',
+    fontWeight: '500'
   },
   daysGrid: {
     flexDirection: 'row',
@@ -200,19 +230,19 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 2
+    padding: 2,
+    borderRadius: 6
   },
   dayMiniHoliday: {
-    backgroundColor: '#fee2e2',
-    borderRadius: 4
+    backgroundColor: '#fee2e2'
   },
   dayMiniShort: {
-    backgroundColor: '#fef3c7',
-    borderRadius: 4
+    backgroundColor: '#fef3c7'
   },
   dayMiniText: {
-    fontSize: 11,
-    color: '#374151'
+    fontSize: 12,
+    color: '#374151',
+    fontWeight: '500'
   },
   dayMiniTextHoliday: {
     color: '#dc2626',
@@ -220,25 +250,26 @@ const styles = StyleSheet.create({
   },
   dayIndicators: {
     position: 'absolute',
-    bottom: 1,
+    bottom: 2,
     flexDirection: 'row',
     gap: 2
   },
   taskDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: '#3b82f6'
   },
   deadlineDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: '#dc2626'
   }
 });
 
 // Добавляем displayName для отладки
 MonthMiniCard.displayName = 'MonthMiniCard';
+DayCell.displayName = 'DayCell';
 
 export default memo(YearView);
