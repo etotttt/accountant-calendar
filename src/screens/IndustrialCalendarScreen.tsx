@@ -2,13 +2,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import {
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCalendarData } from '../hooks/useCalendarData';
 import { formatDate } from '../utils/dateUtils';
 
@@ -38,6 +41,13 @@ export default function IndustrialCalendarScreen({ disabled }: IndustrialCalenda
   const [selectedMonth, setSelectedMonth] = useState(0);
   
   const { holidays, shortDays, isDataAvailable } = useCalendarData(currentYear);
+  const insets = useSafeAreaInsets();
+
+  // Уменьшенный padding для лучшего использования пространства
+  const paddingTop = Platform.select({
+    ios: Math.max(insets.top, 20) - 10,
+    android: (StatusBar.currentHeight || 20) - 10
+  });
 
   // Расчет статистики для периода
   const calculatePeriodStats = (startMonth: number, endMonth: number): PeriodStats => {
@@ -128,7 +138,7 @@ export default function IndustrialCalendarScreen({ disabled }: IndustrialCalenda
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop }]}>
         <View style={styles.titleRow}>
           <Ionicons name="business" size={24} color="#3b82f6" />
           <Text style={styles.title}>Производственный календарь</Text>
@@ -358,17 +368,31 @@ export default function IndustrialCalendarScreen({ disabled }: IndustrialCalenda
               <Text style={styles.breakdownTitle}>Разбивка по кварталам</Text>
               <View style={styles.table}>
                 <View style={styles.tableHeader}>
-                  <Text style={[styles.tableCell, styles.tableCellHeader, { flex: 2 }]}>Период</Text>
-                  <Text style={[styles.tableCell, styles.tableCellHeader]}>Дней</Text>
-                  <Text style={[styles.tableCell, styles.tableCellHeader]}>Раб.</Text>
-                  <Text style={[styles.tableCell, styles.tableCellHeader]}>Вых.</Text>
+                  <Text style={[styles.tableCell, styles.tableCellHeader, styles.tableCellFirst]}>
+                    Период
+                  </Text>
+                  <Text style={[styles.tableCell, styles.tableCellHeader, styles.tableCellNumber]}>
+                    Дней
+                  </Text>
+                  <Text style={[styles.tableCell, styles.tableCellHeader, styles.tableCellNumber]}>
+                    Раб.
+                  </Text>
+                  <Text style={[styles.tableCell, styles.tableCellHeader, styles.tableCellNumber]}>
+                    Вых.
+                  </Text>
                 </View>
                 {quarterNames.map((name, index) => (
                   <View key={index} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { flex: 2 }]}>{name}</Text>
-                    <Text style={styles.tableCell}>{quarterStats[index].calendarDays}</Text>
-                    <Text style={styles.tableCell}>{quarterStats[index].workDays}</Text>
-                    <Text style={styles.tableCell}>{quarterStats[index].holidays}</Text>
+                    <Text style={[styles.tableCell, styles.tableCellFirst]}>{name}</Text>
+                    <Text style={[styles.tableCell, styles.tableCellNumber]}>
+                      {quarterStats[index].calendarDays}
+                    </Text>
+                    <Text style={[styles.tableCell, styles.tableCellNumber]}>
+                      {quarterStats[index].workDays}
+                    </Text>
+                    <Text style={[styles.tableCell, styles.tableCellNumber]}>
+                      {quarterStats[index].holidays}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -378,17 +402,31 @@ export default function IndustrialCalendarScreen({ disabled }: IndustrialCalenda
               <Text style={styles.breakdownTitle}>Разбивка по месяцам</Text>
               <View style={styles.table}>
                 <View style={styles.tableHeader}>
-                  <Text style={[styles.tableCell, styles.tableCellHeader, { flex: 2 }]}>Месяц</Text>
-                  <Text style={[styles.tableCell, styles.tableCellHeader]}>Дней</Text>
-                  <Text style={[styles.tableCell, styles.tableCellHeader]}>Раб.</Text>
-                  <Text style={[styles.tableCell, styles.tableCellHeader]}>Вых.</Text>
+                  <Text style={[styles.tableCell, styles.tableCellHeader, styles.tableCellFirst]}>
+                    Месяц
+                  </Text>
+                  <Text style={[styles.tableCell, styles.tableCellHeader, styles.tableCellNumber]}>
+                    Дней
+                  </Text>
+                  <Text style={[styles.tableCell, styles.tableCellHeader, styles.tableCellNumber]}>
+                    Раб.
+                  </Text>
+                  <Text style={[styles.tableCell, styles.tableCellHeader, styles.tableCellNumber]}>
+                    Вых.
+                  </Text>
                 </View>
                 {monthNames.map((name, index) => (
                   <View key={index} style={styles.tableRow}>
-                    <Text style={[styles.tableCell, { flex: 2 }]}>{name}</Text>
-                    <Text style={styles.tableCell}>{monthStats[index].calendarDays}</Text>
-                    <Text style={styles.tableCell}>{monthStats[index].workDays}</Text>
-                    <Text style={styles.tableCell}>{monthStats[index].holidays}</Text>
+                    <Text style={[styles.tableCell, styles.tableCellFirst]}>{name}</Text>
+                    <Text style={[styles.tableCell, styles.tableCellNumber]}>
+                      {monthStats[index].calendarDays}
+                    </Text>
+                    <Text style={[styles.tableCell, styles.tableCellNumber]}>
+                      {monthStats[index].workDays}
+                    </Text>
+                    <Text style={[styles.tableCell, styles.tableCellNumber]}>
+                      {monthStats[index].holidays}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -410,7 +448,6 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: 'white',
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -422,10 +459,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#1f2937',
   },
@@ -433,13 +470,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   navButton: {
-    padding: 8,
+    padding: 6,
   },
   yearText: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     marginHorizontal: 24,
     minWidth: 60,
@@ -450,11 +487,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f3f4f6',
     borderRadius: 8,
     padding: 2,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   weekTypeButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 6,
     alignItems: 'center',
@@ -463,7 +500,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3b82f6',
   },
   weekTypeText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: '#6b7280',
   },
@@ -472,11 +509,11 @@ const styles = StyleSheet.create({
   },
   periodSelector: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   periodButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderRadius: 6,
     alignItems: 'center',
     backgroundColor: '#f3f4f6',
@@ -485,7 +522,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e0e7ff',
   },
   periodText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: '#6b7280',
   },
@@ -542,10 +579,12 @@ const styles = StyleSheet.create({
     color: '#1f2937',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#6b7280',
     marginTop: 4,
     textAlign: 'center',
+    maxWidth: 90,
+    lineHeight: 14,
   },
   hoursSection: {
     borderTopWidth: 1,
@@ -674,6 +713,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9fafb',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
+    paddingVertical: 4,
   },
   tableRow: {
     flexDirection: 'row',
@@ -682,13 +722,25 @@ const styles = StyleSheet.create({
   },
   tableCell: {
     flex: 1,
-    padding: 12,
-    fontSize: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    fontSize: 13,
     color: '#374151',
+    textAlign: 'center',
   },
   tableCellHeader: {
     fontWeight: '600',
     color: '#1f2937',
+    fontSize: 12,
+  },
+  tableCellFirst: {
+    flex: 2,
+    textAlign: 'left',
+    paddingLeft: 12,
+  },
+  tableCellNumber: {
+    minWidth: 50,
+    textAlign: 'center',
   },
   bottomSpacer: {
     height: 100,

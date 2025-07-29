@@ -22,6 +22,7 @@ interface Props {
   holidays: Record<string, string>;
   shortDays: Record<string, string>;
   taxDeadlines: Record<string, { title: string }>;
+  onGoToDay?: (date: Date) => void; // Новый проп для перехода в режим дня
 }
 
 const DateDetailsModal: React.FC<Props> = ({
@@ -33,6 +34,7 @@ const DateDetailsModal: React.FC<Props> = ({
   holidays,
   shortDays,
   taxDeadlines,
+  onGoToDay,
 }) => {
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
@@ -72,6 +74,13 @@ const DateDetailsModal: React.FC<Props> = ({
     ]);
   };
 
+  const handleGoToDay = () => {
+    onClose();
+    if (onGoToDay) {
+      onGoToDay(date);
+    }
+  };
+
   return (
     <Modal
       visible={visible}
@@ -86,9 +95,21 @@ const DateDetailsModal: React.FC<Props> = ({
             <Text style={styles.title}>
               {date.toLocaleDateString('ru-RU')}
             </Text>
-            <TouchableOpacity onPress={onClose} hitSlop={16}>
-              <Ionicons name="close" size={22} color="#333" />
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              {onGoToDay && (
+                <TouchableOpacity 
+                  style={styles.dayViewButton}
+                  onPress={handleGoToDay}
+                  hitSlop={16}
+                >
+                  <Ionicons name="time-outline" size={20} color="#3b82f6" />
+                  <Text style={styles.dayViewButtonText}>День</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={onClose} hitSlop={16}>
+                <Ionicons name="close" size={22} color="#333" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Add task */}
@@ -139,15 +160,22 @@ const DateDetailsModal: React.FC<Props> = ({
                       color={task.completed ? '#10b981' : '#9ca3af'}
                     />
                   </TouchableOpacity>
-                  <Text
-                    style={[
-                      styles.taskText,
-                      task.completed && styles.taskCompleted,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {task.title}
-                  </Text>
+                  <View style={styles.taskDetails}>
+                    <Text
+                      style={[
+                        styles.taskText,
+                        task.completed && styles.taskCompleted,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {task.title}
+                    </Text>
+                    {task.startTime && (
+                      <Text style={styles.taskTimeInfo}>
+                        {task.startTime} {task.endTime && `- ${task.endTime}`}
+                      </Text>
+                    )}
+                  </View>
                   <TouchableOpacity
                     onPress={() => deleteTask(task.id)}
                     hitSlop={16}
@@ -187,6 +215,25 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: { fontSize: 18, fontWeight: '600' },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  dayViewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  dayViewButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#3b82f6',
+  },
   addRow: { flexDirection: 'row', marginBottom: 12 },
   input: {
     flex: 1,
@@ -212,8 +259,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     gap: 12,
   },
-  taskText: { flex: 1, fontSize: 16 },
+  taskDetails: {
+    flex: 1,
+  },
+  taskText: { fontSize: 16 },
   taskCompleted: { textDecorationLine: 'line-through', color: '#9ca3af' },
+  taskTimeInfo: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -2,7 +2,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
+  Platform,
   SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -30,6 +32,10 @@ export default function TabIndexScreen() {
   const [showWorkdayCalculator, setShowWorkdayCalculator] = useState(false);
 
   const handleVacationPress = () => {
+    // Если мы в производственном календаре, переключаемся на личный
+    if (calendarMode === 'industrial') {
+      setCalendarMode('personal');
+    }
     setToolMode('vacation');
     setVacationStart(null);
     setVacationEnd(null);
@@ -52,62 +58,68 @@ export default function TabIndexScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Mode Switcher */}
-      <View style={styles.modeSwitcher}>
-        <TouchableOpacity 
-          style={[
-            styles.modeButton, 
-            calendarMode === 'personal' && styles.modeButtonActive
-          ]}
-          onPress={() => setCalendarMode('personal')}
-          disabled={toolMode !== 'none'}
-        >
-          <Ionicons 
-            name="person" 
-            size={20} 
-            color={calendarMode === 'personal' ? '#fff' : '#6b7280'} 
-          />
-          <Text style={[
-            styles.modeButtonText,
-            calendarMode === 'personal' && styles.modeButtonTextActive
-          ]}>
-            Личный
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[
-            styles.modeButton, 
-            calendarMode === 'industrial' && styles.modeButtonActive
-          ]}
-          onPress={() => setCalendarMode('industrial')}
-          disabled={toolMode !== 'none'}
-        >
-          <Ionicons 
-            name="business" 
-            size={20} 
-            color={calendarMode === 'industrial' ? '#fff' : '#6b7280'} 
-          />
-          <Text style={[
-            styles.modeButtonText,
-            calendarMode === 'industrial' && styles.modeButtonTextActive
-          ]}>
-            Производственный
-          </Text>
-        </TouchableOpacity>
+      {/* Status Bar spacing for Android */}
+      {Platform.OS === 'android' && <View style={{ height: StatusBar.currentHeight }} />}
+      
+      {/* Mode Switcher - добавлен отступ сверху */}
+      <View style={styles.modeSwitcherWrapper}>
+        <View style={styles.modeSwitcher}>
+          <TouchableOpacity 
+            style={[
+              styles.modeButton, 
+              calendarMode === 'personal' && styles.modeButtonActive
+            ]}
+            onPress={() => setCalendarMode('personal')}
+            disabled={toolMode === 'vacation'}
+          >
+            <Ionicons 
+              name="person" 
+              size={20} 
+              color={calendarMode === 'personal' ? '#fff' : '#6b7280'} 
+            />
+            <Text style={[
+              styles.modeButtonText,
+              calendarMode === 'personal' && styles.modeButtonTextActive
+            ]}>
+              Личный
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.modeButton, 
+              calendarMode === 'industrial' && styles.modeButtonActive,
+              toolMode === 'vacation' && styles.modeButtonDisabled
+            ]}
+            onPress={() => setCalendarMode('industrial')}
+            disabled={toolMode === 'vacation'}
+          >
+            <Ionicons 
+              name="business" 
+              size={20} 
+              color={calendarMode === 'industrial' ? '#fff' : '#6b7280'} 
+            />
+            <Text style={[
+              styles.modeButtonText,
+              calendarMode === 'industrial' && styles.modeButtonTextActive
+            ]}>
+              Производственный
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Tool Mode Indicator */}
-      {toolMode !== 'none' && (
+      {toolMode === 'vacation' && (
         <View style={styles.toolModeIndicator}>
           <View style={styles.toolModeContent}>
             <Ionicons 
-              name={toolMode === 'vacation' ? 'cash-outline' : 'calculator'} 
+              name="cash-outline" 
               size={20} 
               color="#92400e" 
             />
             <Text style={styles.toolModeText}>
-              {toolMode === 'vacation' ? 'Расчет отпускных' : 'Калькулятор дней'}
+              Расчет отпускных
             </Text>
           </View>
           <TouchableOpacity onPress={cancelTool} style={styles.closeButton}>
@@ -116,39 +128,56 @@ export default function TabIndexScreen() {
         </View>
       )}
 
-      {/* Vacation Calculator Overlay */}
-      {toolMode === 'vacation' && (
-        <View style={styles.toolOverlay}>
-          <VacationCalculator
-            vacationStart={vacationStart}
-            vacationEnd={vacationEnd}
-            holidays={holidays}
-            onReset={() => {
-              setVacationStart(null);
-              setVacationEnd(null);
-            }}
-            onDateChange={handleVacationDateChange}
-          />
-        </View>
-      )}
-
-      {/* Main Content */}
-      <View style={[
-        styles.content,
-        toolMode !== 'none' && styles.contentDisabled
-      ]}>
-        {calendarMode === 'personal' ? (
-          <PersonalCalendarScreen 
-            disabled={toolMode !== 'none'}
-            vacationMode={toolMode === 'vacation'}
-            vacationStart={vacationStart}
-            vacationEnd={vacationEnd}
-            onVacationDateSelect={handleVacationDateChange}
-          />
+      {/* Main Content with conditional layout */}
+      <View style={styles.content}>
+        {toolMode === 'vacation' ? (
+          // Режим расчета отпускных - разделенный интерфейс
+          <View style={styles.vacationModeContainer}>
+            {/* Калькулятор отпускных вверху */}
+            <View style={styles.vacationCalculatorWrapper}>
+              <VacationCalculator
+                vacationStart={vacationStart}
+                vacationEnd={vacationEnd}
+                holidays={holidays}
+                onReset={() => {
+                  setVacationStart(null);
+                  setVacationEnd(null);
+                }}
+                onDateChange={handleVacationDateChange}
+              />
+            </View>
+            
+            {/* Разделитель */}
+            <View style={styles.separator} />
+            
+            {/* Календарь внизу для выбора дат */}
+            <View style={styles.calendarWrapper}>
+              <PersonalCalendarScreen 
+                disabled={false}
+                vacationMode={true}
+                vacationStart={vacationStart}
+                vacationEnd={vacationEnd}
+                onVacationDateSelect={handleVacationDateChange}
+              />
+            </View>
+          </View>
         ) : (
-          <IndustrialCalendarScreen 
-            disabled={toolMode !== 'none'}
-          />
+          // Обычный режим
+          <>
+            {calendarMode === 'personal' ? (
+              <PersonalCalendarScreen 
+                disabled={false}
+                vacationMode={false}
+                vacationStart={vacationStart}
+                vacationEnd={vacationEnd}
+                onVacationDateSelect={handleVacationDateChange}
+              />
+            ) : (
+              <IndustrialCalendarScreen 
+                disabled={false}
+              />
+            )}
+          </>
         )}
       </View>
 
@@ -174,17 +203,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f3f4f6',
   },
-  modeSwitcher: {
-    flexDirection: 'row',
+  modeSwitcherWrapper: {
+    paddingTop: Platform.OS === 'ios' ? 10 : 5, // Добавлен отступ сверху
     backgroundColor: 'white',
-    padding: 8,
-    gap: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 5,
     zIndex: 100,
+  },
+  modeSwitcher: {
+    flexDirection: 'row',
+    padding: 8,
+    gap: 8,
   },
   modeButton: {
     flex: 1,
@@ -199,6 +231,9 @@ const styles = StyleSheet.create({
   },
   modeButtonActive: {
     backgroundColor: '#3b82f6',
+  },
+  modeButtonDisabled: {
+    opacity: 0.5,
   },
   modeButtonText: {
     fontSize: 14,
@@ -234,16 +269,21 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  contentDisabled: {
-    opacity: 0.5,
-    pointerEvents: 'none',
+  vacationModeContainer: {
+    flex: 1,
   },
-  toolOverlay: {
-    position: 'absolute',
-    top: 120,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
+  vacationCalculatorWrapper: {
     paddingHorizontal: 16,
+    paddingTop: 16,
+    backgroundColor: '#f3f4f6',
+  },
+  separator: {
+    height: 16,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 8,
+  },
+  calendarWrapper: {
+    flex: 1,
+    backgroundColor: '#f3f4f6',
   },
 });

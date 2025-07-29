@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "accountant-calendar",
+    "name": "Календарь Бухгалтера",
     "slug": "accountant-calendar",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.etotttt.accountantcalendar"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +18,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.etotttt.accountantcalendar"
+      "package": "com.etotttt.accountantcalendar",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",

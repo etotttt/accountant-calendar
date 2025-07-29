@@ -2,20 +2,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-    Platform,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SafeHeaderProps {
   title: string;
   currentPeriod: string;
-  view: 'year' | 'month';
-  onViewChange: (view: 'year' | 'month') => void;
+  view: 'year' | 'month' | 'day';
+  onViewChange: (view: 'year' | 'month' | 'day') => void;
   onNavigatePrev: () => void;
   onNavigateNext: () => void;
   calculatorMode?: string;
@@ -82,6 +82,20 @@ const SafeHeader: React.FC<SafeHeaderProps> = ({
         </View>
         
         <View style={styles.viewToggle}>
+          <TouchableOpacity 
+            style={[
+              styles.viewButton, 
+              view === 'day' && styles.viewButtonActive
+            ]} 
+            onPress={() => onViewChange('day')}
+          >
+            <Text style={[
+              styles.viewButtonText, 
+              view === 'day' && styles.viewButtonTextActive
+            ]}>
+              День
+            </Text>
+          </TouchableOpacity>
           <TouchableOpacity 
             style={[
               styles.viewButton, 
@@ -183,9 +197,9 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     padding: 2,
     alignSelf: 'center',
-    width: '50%',
-    minWidth: 120,
-    maxWidth: 180
+    width: '70%',
+    minWidth: 180,
+    maxWidth: 240
   },
   viewButton: {
     flex: 1,

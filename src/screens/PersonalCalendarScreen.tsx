@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import DayView from '../components/Calendar/DayView';
 import MonthView from '../components/Calendar/MonthView';
 import YearView from '../components/Calendar/YearView';
 import DateDetailsModal from '../components/Modals/DateDetailsModal';
@@ -80,6 +81,20 @@ export default function PersonalCalendarScreen({
     }
   };
 
+  const handleViewChange = (newView: ViewType) => {
+    setView(newView);
+    if (newView === 'day' && selectedDate) {
+      setCurrentDate(selectedDate);
+    } else if (newView === 'day') {
+      setCurrentDate(new Date());
+    }
+  };
+
+  const handleGoToDay = (date: Date) => {
+    setCurrentDate(date);
+    setView('day');
+  };
+
   const toggleLayer = (layerId: string) => {
     setLayers(layers.map(layer => 
       layer.id === layerId ? { ...layer, enabled: !layer.enabled } : layer
@@ -94,9 +109,36 @@ export default function PersonalCalendarScreen({
     setCurrentDate(new Date(currentDate.getFullYear() + amount, currentDate.getMonth(), 1));
   };
 
-  const currentPeriodText = view === 'year'
-    ? currentDate.getFullYear().toString()
-    : currentDate.toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
+  const changeDay = (amount: number) => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + amount);
+    setCurrentDate(newDate);
+  };
+
+  const navigate = (direction: 'prev' | 'next') => {
+    const amount = direction === 'prev' ? -1 : 1;
+    if (view === 'year') {
+      changeYear(amount);
+    } else if (view === 'month') {
+      changeMonth(amount);
+    } else {
+      changeDay(amount);
+    }
+  };
+
+  const getCurrentPeriodText = () => {
+    if (view === 'year') {
+      return currentDate.getFullYear().toString();
+    } else if (view === 'month') {
+      return currentDate.toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
+    } else {
+      return currentDate.toLocaleDateString('ru-RU', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      });
+    }
+  };
 
   // Фильтрация данных в зависимости от активных слоев
   const getFilteredData = () => {
@@ -118,31 +160,78 @@ export default function PersonalCalendarScreen({
     <View style={styles.container}>
       <SafeHeader
         title="Личный календарь"
-        currentPeriod={currentPeriodText}
+        currentPeriod={getCurrentPeriodText()}
         view={view}
-        onViewChange={setView}
-        onNavigatePrev={() => view === 'year' ? changeYear(-1) : changeMonth(-1)}
-        onNavigateNext={() => view === 'year' ? changeYear(1) : changeMonth(1)}
+        onViewChange={handleViewChange}
+        onNavigatePrev={() => navigate('prev')}
+        onNavigateNext={() => navigate('next')}
       />
 
-      {/* Layers Control */}
-      <View style={styles.layersControl}>
-        <TouchableOpacity 
-          style={styles.layersButton}
-          onPress={() => setShowLayers(!showLayers)}
+      {view === 'day' ? (
+        <DayView
+          currentDate={currentDate}
+          holidays={filteredData.holidays}
+          shortDays={filteredData.shortDays}
+          tasks={tasks}
+          taxDeadlines={filteredData.taxDeadlines}
+          onTasksUpdate={updateTasks}
+        />
+      ) : (
+        <ScrollView 
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.contentContainer}
         >
-          <Ionicons name="layers" size={20} color="#6b7280" />
-          <Text style={styles.layersButtonText}>Слои</Text>
-          <Ionicons 
-            name={showLayers ? "chevron-up" : "chevron-down"} 
-            size={16} 
-            color="#6b7280" 
-          />
-        </TouchableOpacity>
-      </View>
+          <View style={styles.calendarContainer}>
+            {view === 'year' ? (
+              <YearView
+                year={currentDate.getFullYear()}
+                holidays={filteredData.holidays}
+                shortDays={filteredData.shortDays}
+                tasks={filteredData.tasks}
+                taxDeadlines={filteredData.taxDeadlines}
+                onDateClick={handleDateClick}
+              />
+            ) : (
+              <MonthView
+                currentDate={currentDate}
+                holidays={filteredData.holidays}
+                shortDays={filteredData.shortDays}
+                tasks={filteredData.tasks}
+                taxDeadlines={filteredData.taxDeadlines}
+                onDateClick={handleDateClick}
+                selectedDate={selectedDate}
+                vacationStart={vacationStart}
+                vacationEnd={vacationEnd}
+                calculatorMode={vacationMode ? 'vacation' : 'none'}
+              />
+            )}
+          </View>
 
-      {showLayers && (
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+      )}
+
+      {/* Floating Layers Button - не показываем в режиме дня */}
+      {view !== 'day' && (
+        <TouchableOpacity 
+          style={styles.floatingLayersButton}
+          onPress={() => setShowLayers(!showLayers)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="layers" size={24} color="white" />
+        </TouchableOpacity>
+      )}
+
+      {/* Layers Panel */}
+      {showLayers && view !== 'day' && (
         <View style={styles.layersPanel}>
+          <View style={styles.layersPanelHeader}>
+            <Text style={styles.layersPanelTitle}>Слои календаря</Text>
+            <TouchableOpacity onPress={() => setShowLayers(false)}>
+              <Ionicons name="close" size={24} color="#6b7280" />
+            </TouchableOpacity>
+          </View>
           {layers.map(layer => (
             <View key={layer.id} style={styles.layerItem}>
               <View style={styles.layerInfo}>
@@ -157,46 +246,8 @@ export default function PersonalCalendarScreen({
               />
             </View>
           ))}
-          <TouchableOpacity style={styles.addLayerButton}>
-            <Ionicons name="add-circle-outline" size={20} color="#3b82f6" />
-            <Text style={styles.addLayerText}>Добавить слой</Text>
-          </TouchableOpacity>
         </View>
       )}
-
-      <ScrollView 
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.contentContainer}
-      >
-        <View style={styles.calendarContainer}>
-          {view === 'year' ? (
-            <YearView
-              year={currentDate.getFullYear()}
-              holidays={filteredData.holidays}
-              shortDays={filteredData.shortDays}
-              tasks={filteredData.tasks}
-              taxDeadlines={filteredData.taxDeadlines}
-              onDateClick={handleDateClick}
-            />
-          ) : (
-            <MonthView
-              currentDate={currentDate}
-              holidays={filteredData.holidays}
-              shortDays={filteredData.shortDays}
-              tasks={filteredData.tasks}
-              taxDeadlines={filteredData.taxDeadlines}
-              onDateClick={handleDateClick}
-              selectedDate={selectedDate}
-              vacationStart={vacationStart}
-              vacationEnd={vacationEnd}
-              calculatorMode={vacationMode ? 'vacation' : 'none'}
-            />
-          )}
-        </View>
-
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
 
       {/* Date Details Modal */}
       <DateDetailsModal
@@ -208,6 +259,7 @@ export default function PersonalCalendarScreen({
         tasks={tasks}
         taxDeadlines={filteredData.taxDeadlines}
         onTasksUpdate={updateTasks}
+        onGoToDay={handleGoToDay}
       />
     </View>
   );
@@ -218,30 +270,59 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f3f4f6',
   },
-  layersControl: {
-    backgroundColor: 'white',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  layersButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  layersButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6b7280',
+  content: {
     flex: 1,
   },
+  contentContainer: {
+    paddingHorizontal: 12,
+    paddingTop: 8,
+  },
+  calendarContainer: {
+    marginBottom: 16,
+  },
+  bottomSpacer: {
+    height: 100,
+  },
+  floatingLayersButton: {
+    position: 'absolute',
+    left: 16,
+    bottom: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#6366f1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8
+  },
   layersPanel: {
+    position: 'absolute',
+    left: 16,
+    bottom: 80,
     backgroundColor: 'white',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderRadius: 12,
+    padding: 16,
+    width: 250,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  layersPanelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  layersPanelTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
   },
   layerItem: {
     flexDirection: 'row',
@@ -262,32 +343,5 @@ const styles = StyleSheet.create({
   layerName: {
     fontSize: 14,
     color: '#374151',
-  },
-  addLayerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    marginTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  addLayerText: {
-    fontSize: 14,
-    color: '#3b82f6',
-    fontWeight: '500',
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: 12,
-    paddingTop: 8,
-  },
-  calendarContainer: {
-    marginBottom: 16,
-  },
-  bottomSpacer: {
-    height: 100,
   },
 });

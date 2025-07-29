@@ -22,6 +22,8 @@ export interface Task {
     date: string;
     title: string;
     completed: boolean;
+    startTime?: string; // HH:MM format
+    endTime?: string;   // HH:MM format
 }
 
 export interface TaxDeadline {
@@ -42,4 +44,4 @@ export interface YearStats {
     };
 }
 
-export type ViewType = 'year' | 'month';
+export type ViewType = 'year' | 'month' | 'day';

@@ -17,13 +17,13 @@ interface MonthViewProps {
   calculatorMode?: string;
 }
 
-const MonthView: React.FC<MonthViewProps> = ({ 
-  currentDate, 
-  holidays, 
-  shortDays, 
-  tasks, 
-  taxDeadlines, 
-  onDateClick, 
+const MonthView: React.FC<MonthViewProps> = ({
+  currentDate,
+  holidays,
+  shortDays,
+  tasks,
+  taxDeadlines,
+  onDateClick,
   selectedDate,
   vacationStart,
   vacationEnd,
@@ -38,24 +38,24 @@ const MonthView: React.FC<MonthViewProps> = ({
   const days = [];
   // Предыдущий месяц
   for (let i = 0; i < startingDay; i++) {
-    days.push({ 
-      date: new Date(year, month, i - startingDay + 1), 
-      isCurrentMonth: false 
+    days.push({
+      date: new Date(year, month, i - startingDay + 1),
+      isCurrentMonth: false
     });
   }
   // Текущий месяц
   for (let i = 1; i <= daysInMonth; i++) {
-    days.push({ 
-      date: new Date(year, month, i), 
-      isCurrentMonth: true 
+    days.push({
+      date: new Date(year, month, i),
+      isCurrentMonth: true
     });
   }
   // Следующий месяц
   const remaining = 42 - days.length;
   for (let i = 1; i <= remaining; i++) {
-    days.push({ 
-      date: new Date(year, month + 1, i), 
-      isCurrentMonth: false 
+    days.push({
+      date: new Date(year, month + 1, i),
+      isCurrentMonth: false
     });
   }
 
@@ -66,22 +66,22 @@ const MonthView: React.FC<MonthViewProps> = ({
 
   const getDateStatus = (date: Date): 'start' | 'end' | 'range' | 'single' | null => {
     if (calculatorMode !== 'vacation' || !vacationStart) return null;
-    
+
     const dateStr = formatDate(date);
     const startStr = formatDate(vacationStart);
-    
+
     if (!vacationEnd) {
       // Только начало выбрано
       return dateStr === startStr ? 'single' : null;
     }
-    
+
     const endStr = formatDate(vacationEnd);
-    
+
     if (dateStr === startStr && dateStr === endStr) return 'single';
     if (dateStr === startStr) return 'start';
     if (dateStr === endStr) return 'end';
     if (isInVacationRange(date)) return 'range';
-    
+
     return null;
   };
 
@@ -143,6 +143,9 @@ const MonthView: React.FC<MonthViewProps> = ({
                   {dayTasks.map(task => (
                     <View key={task.id} style={[styles.taskTag, task.completed && styles.taskTagCompleted]}>
                       <Text style={[styles.taskTagText, task.completed && styles.taskTagTextCompleted]} numberOfLines={1}>
+                        {task.startTime && (
+                          <Text style={styles.taskTimePrefix}>{task.startTime} </Text>
+                        )}
                         {task.title}
                       </Text>
                     </View>
@@ -308,6 +311,11 @@ const styles = StyleSheet.create({
   taskTagTextCompleted: {
     textDecorationLine: 'line-through',
     color: '#9ca3af'
+  },
+  taskTimePrefix: {
+    fontSize: 8,
+    fontWeight: '600',
+    color: '#1e40af',
   },
   vacationLegend: {
     flexDirection: 'row',
